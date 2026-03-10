@@ -40,6 +40,27 @@ stdenv.mkDerivation (finalAttrs: {
     rm -rf bundles/
   '';
 
+  postInstall = ''
+    mkdir -p $out/lib/ocaml/${ocamlPackages.ocaml.version}/site-lib/coccilib/
+    cp $out/lib/coccinelle/ocaml/*.cmi $out/lib/ocaml/${ocamlPackages.ocaml.version}/site-lib/coccilib
+    cd $out/lib/ocaml/${ocamlPackages.ocaml.version}/site-lib/coccilib
+    ${ocamlPackages.ocaml}/bin/ocamlopt -a -o coccilib.cmxa *.cmx
+    ${ocamlPackages.ocaml}/bin/ocamlc -a -o coccilib.cma
+
+    cat > META <<EOF
+name = "coccilib"
+version = "${finalAttrs.version}"
+description = "Coccinelle OCaml library"
+archive(byte) = "coccilib.cma"
+archive(native) = "coccilib.cmxa"
+requires = ""
+EOF
+  '';
+
+  shellHook = ''
+    export OCAMLPATH=$out/lib/ocaml/${ocamlPackages.ocaml.version}/site-lib/:$OCAMLPATH
+  '';
+
   meta = {
     description = "Program to apply semantic patches to C code";
     longDescription = ''
